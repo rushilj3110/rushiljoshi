@@ -1,0 +1,447 @@
+<title>College Admissions Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: masthead, then a filter rail beside two charts, then the applications ledger; a drawer slides in for one student's file. */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --sunken:#e9eeec; --line:#d7dfdc;
+  --ink:#14211e; --muted:#5b6b67;
+  --accent:#0d6b5f; --accent-ink:#ffffff; --accent-soft:#d6ece7;
+  --s-new:#7a8a86; --s-docs:#3f7fbf; --s-review:#b7862a; --s-offer:#0d6b5f; --s-paid:#5a4fb0; --s-pio:#c0612b; --s-visa:#2e8b3e; --s-rej:#b23a3a;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1514; --surface:#172120; --sunken:#1d2928; --line:#2b3a38;
+  --ink:#e6eeec; --muted:#93a5a1; --accent:#3fb5a2; --accent-ink:#0b1514; --accent-soft:#1d3a35;
+  --s-new:#8d9c98; --s-docs:#6ea6dd; --s-review:#d8ab52; --s-offer:#3fb5a2; --s-paid:#9a8fe8; --s-pio:#e38a55; --s-visa:#5cbf6b; --s-rej:#e06a6a;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1514; --surface:#172120; --sunken:#1d2928; --line:#2b3a38;
+  --ink:#e6eeec; --muted:#93a5a1; --accent:#3fb5a2; --accent-ink:#0b1514; --accent-soft:#1d3a35;
+  --s-new:#8d9c98; --s-docs:#6ea6dd; --s-review:#d8ab52; --s-offer:#3fb5a2; --s-paid:#9a8fe8; --s-pio:#e38a55; --s-visa:#5cbf6b; --s-rej:#e06a6a;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5}
+.wrap{max-width:1320px;margin:0 auto;padding-inline:20px;padding-block:24px 48px;display:grid;gap:20px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-size:.92em}
+.label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+
+/* masthead */
+.mast{display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.crest{width:52px;height:52px;border-radius:14px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:22px;flex:none}
+.brand h1{font-size:clamp(22px,3vw,32px);line-height:1.1}
+.brand p{margin:2px 0 0;color:var(--muted)}
+.mast-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--s-rej)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.banner{border:1px dashed var(--line);background:var(--sunken);border-radius:var(--r);padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+
+/* stage strip */
+.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;text-align:left;display:grid;gap:2px;position:relative;overflow:hidden}
+.stage::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--c)}
+.stage .n{font-family:var(--f-display);font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.stage .t{font-size:12px;color:var(--muted);font-weight:600}
+.stage[aria-pressed="true"]{border-color:var(--c);background:var(--sunken)}
+
+/* top grid */
+.top{display:grid;grid-template-columns:minmax(240px,300px) 1fr 1fr;gap:20px}
+@media (max-width:1050px){.top{grid-template-columns:1fr 1fr}.filters{grid-column:1/-1}}
+@media (max-width:680px){.top{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.panel h2{font-size:17px;margin-bottom:12px}
+.filters{display:grid;gap:12px;align-content:start}
+.field{display:grid;gap:4px}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 11px}
+.field textarea{min-height:80px;resize:vertical}
+.total{display:flex;align-items:baseline;gap:10px}
+.total b{font-family:var(--f-display);font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--f-body);font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;background:var(--c);display:inline-block}
+.empty-chart{color:var(--muted);padding:40px 0;text-align:center}
+
+/* ledger */
+.ledger-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:980px}
+th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--sunken);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;position:sticky;top:0;cursor:pointer;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--sunken)}
+.who b{display:block}
+.who small{color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c);white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c)}
+.docs{display:flex;gap:4px;flex-wrap:wrap}
+.doc{font-size:11px;border-radius:6px;padding:2px 6px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.doc.ok{border-color:transparent;background:var(--accent-soft);color:var(--accent)}
+.empty{padding:48px 16px;text-align:center;color:var(--muted)}
+.empty h3{color:var(--ink);font-size:18px;margin-bottom:6px}
+.sample-tag{font-size:10px;text-transform:uppercase;letter-spacing:.08em;background:var(--sunken);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-left:6px;color:var(--muted);font-weight:600}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:color-mix(in srgb,var(--ink) 35%,transparent);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--surface);border-left:1px solid var(--line);z-index:21;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.drawer header h2{font-size:20px}
+.drawer .body{padding:18px 20px;overflow-y:auto;display:grid;gap:18px;flex:1}
+.drawer footer{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.grid2{grid-template-columns:1fr}}
+fieldset{border:1px solid var(--line);border-radius:10px;padding:14px;margin:0;display:grid;gap:12px;min-width:0}
+legend{padding:0 6px;font-weight:700;font-family:var(--f-display)}
+.docrow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:8px 0;border-bottom:1px dashed var(--line)}
+.docrow:last-child{border-bottom:0}
+.docrow a{color:var(--accent);font-weight:600;word-break:break-all}
+.timeline{display:grid;gap:8px;margin:0;padding:0;list-style:none;font-size:13px}
+.timeline li{display:grid;grid-template-columns:auto 1fr;gap:10px}
+.timeline time{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:30;font-weight:600}
+.confirm{background:var(--sunken);border-radius:10px;padding:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+@media (prefers-reduced-motion:no-preference){.drawer{animation:slide .18s ease-out}@keyframes slide{from{transform:translateX(24px);opacity:.6}}}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="brand">
+      <div class="crest" id="crest">C</div>
+      <div style="min-width:0">
+        <h1 id="collegeName">College Admissions Portal</h1>
+        <p>International student applications, from agent submission to PIO visa</p>
+      </div>
+    </div>
+    <div class="mast-actions">
+      <button class="btn" id="settingsBtn" type="button">Settings</button>
+      <button class="btn primary" id="newBtn" type="button">+ New application</button>
+    </div>
+  </header>
+
+  <div class="banner" id="offlineBanner" hidden>
+    <span>The shared database isn't available in this view, so changes stay on this screen only. Sign in to claude.ai to save applications.</span>
+  </div>
+
+  <section class="stages" id="stages" aria-label="Applications by stage"></section>
+
+  <section class="top">
+    <div class="panel filters">
+      <div class="total"><b id="total">0</b><span class="label">applications shown</span></div>
+      <div class="field"><label class="label" for="fName">Student name</label><input id="fName" placeholder="Search by name"></div>
+      <div class="field"><label class="label" for="fPassport">Passport no.</label><input id="fPassport" placeholder="e.g. AT300935" class="mono"></div>
+      <div class="field"><label class="label" for="fStatus">Stage</label><select id="fStatus"></select></div>
+      <div class="field"><label class="label" for="fAgent">Agent</label><select id="fAgent"></select></div>
+      <div class="field"><label class="label" for="fIntake">Intake</label><select id="fIntake"></select></div>
+      <button class="btn" id="clearBtn" type="button">Clear filters</button>
+    </div>
+    <div class="panel chart">
+      <h2>Pipeline</h2>
+      <div id="donut"></div>
+    </div>
+    <div class="panel chart">
+      <h2>Applications by intake</h2>
+      <div id="bars"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="ledger-head">
+      <h2 style="margin:0">Applications</h2>
+      <span class="label" id="sortNote">Newest first</span>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th data-sort="name">Student</th>
+          <th data-sort="passport">Passport</th>
+          <th data-sort="course">Course</th>
+          <th data-sort="intake">Intake</th>
+          <th data-sort="agent">Agent</th>
+          <th>Documents</th>
+          <th data-sort="status">Stage</th>
+          <th data-sort="updatedAt">Updated</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="emptyRows" hidden>
+      <h3>No applications match these filters</h3>
+      <p>Clear the filters, or add a new application.</p>
+    </div>
+  </section>
+</div>
+
+<div id="drawerRoot"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const STAGES=[
+  {k:"received",t:"Application received",c:"--s-new"},
+  {k:"docs",t:"Documents verified",c:"--s-docs"},
+  {k:"review",t:"Under academic review",c:"--s-review"},
+  {k:"offer",t:"Offer issued",c:"--s-offer"},
+  {k:"paid",t:"Fees paid",c:"--s-paid"},
+  {k:"pio",t:"Submitted to PIO",c:"--s-pio"},
+  {k:"visa",t:"Visa approved",c:"--s-visa"},
+  {k:"rejected",t:"Rejected / withdrawn",c:"--s-rej"},
+];
+const STAGE=Object.fromEntries(STAGES.map(s=>[s.k,s]));
+const DOCS=[
+  {k:"passport",t:"Passport copy"},
+  {k:"transcript",t:"Academic transcripts"},
+  {k:"photo",t:"Photograph"},
+  {k:"offer",t:"Offer letter"},
+  {k:"receipt",t:"Fee receipt"},
+  {k:"visa",t:"Visa / PIO letter"},
+];
+const DEFAULT_SETTINGS={
+  name:"",
+  courses:["ABE Level 3 Diploma in Tourism, Hospitality, Business and Leadership"],
+  agents:["Magnitude Global (OPC) Pvt Ltd","Immiversa Multi Services","Direct (no agent)"],
+};
+
+let db=null, assets=null, user=null, canWrite=true;
+let apps=[], live=false, settings={...DEFAULT_SETTINGS};
+let filt={name:"",passport:"",status:"",agent:"",intake:""};
+let sort={k:"updatedAt",dir:-1};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmtIntake=v=>{if(!v)return"—";const[y,m]=v.split("-");return new Date(+y,+m-1,1).toLocaleDateString(undefined,{month:"short",year:"numeric"})};
+const fmtDate=t=>t?new Date(t).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"}):"—";
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2600)}
+
+function showing(){return apps}
+
+function visible(){
+  const n=filt.name.toLowerCase(),p=filt.passport.toLowerCase();
+  let r=showing().filter(a=>(!n||a.name?.toLowerCase().includes(n))&&(!p||a.passport?.toLowerCase().includes(p))&&(!filt.status||a.status===filt.status)&&(!filt.agent||a.agent===filt.agent)&&(!filt.intake||a.intake===filt.intake));
+  r.sort((a,b)=>{let x=a[sort.k]??"",y=b[sort.k]??"";if(sort.k==="status"){x=STAGES.findIndex(s=>s.k===x);y=STAGES.findIndex(s=>s.k===y)}return(x>y?1:x<y?-1:0)*sort.dir});
+  return r;
+}
+
+function opts(sel,list,all,cur){sel.innerHTML=`<option value="">${all}</option>`+list.map(([v,t])=>`<option value="${esc(v)}"${v===cur?" selected":""}>${esc(t)}</option>`).join("")}
+
+function render(){
+  const all=showing();
+  const nm=settings.name||"College Admissions Portal";
+  $("#collegeName").textContent=nm;
+  $("#crest").textContent=(settings.name||"C").split(/\s+/).filter(w=>/^[A-Z]/.test(w)).slice(0,2).map(w=>w[0]).join("")||"C";
+
+  // stage strip
+  const counts={};all.forEach(a=>counts[a.status]=(counts[a.status]||0)+1);
+  $("#stages").innerHTML=STAGES.map(s=>`<button type="button" class="stage" style="--c:var(${s.c})" data-k="${s.k}" aria-pressed="${filt.status===s.k}"><span class="n">${counts[s.k]||0}</span><span class="t">${s.t}</span></button>`).join("");
+
+  // filter options
+  opts($("#fStatus"),STAGES.map(s=>[s.k,s.t]),"All stages",filt.status);
+  const agents=[...new Set([...settings.agents,...all.map(a=>a.agent).filter(Boolean)])];
+  opts($("#fAgent"),agents.map(a=>[a,a]),"All agents",filt.agent);
+  const intakes=[...new Set(all.map(a=>a.intake).filter(Boolean))].sort();
+  opts($("#fIntake"),intakes.map(i=>[i,fmtIntake(i)]),"All intakes",filt.intake);
+
+  const rows=visible();
+  $("#total").textContent=rows.length;
+  $("#rows").innerHTML=rows.map(a=>{const s=STAGE[a.status]||STAGES[0];const d=a.docs||{};
+    return `<tr data-id="${esc(a.id)}" tabindex="0">
+      <td class="who"><b>${esc(a.name)}</b><small>${esc(a.nationality||"")}</small></td>
+      <td class="mono">${esc(a.passport||"—")}</td>
+      <td style="max-width:280px"><div>${esc(a.course||"—")}</div><small style="color:var(--muted)">${esc([a.level,a.prior&&("Prior: "+a.prior)].filter(Boolean).join(" · "))}</small></td>
+      <td style="white-space:nowrap">${fmtIntake(a.intake)}</td>
+      <td>${esc(a.agent||"—")}</td>
+      <td><div class="docs">${DOCS.map(x=>`<span class="doc${d[x.k]?" ok":""}" title="${x.t}">${x.t.split(" ")[0]}</span>`).join("")}</div></td>
+      <td><span class="pill" style="--c:var(${s.c})">${s.t}</span>${a.status==="pio"&&a.pioDate?`<div><small style="color:var(--muted)">on ${fmtDate(a.pioDate)}</small></div>`:""}</td>
+      <td style="white-space:nowrap;color:var(--muted)">${fmtDate(a.updatedAt)}</td></tr>`}).join("");
+  $("#emptyRows").hidden=rows.length>0;
+  if(!all.length){ $("#emptyRows").querySelector("h3").textContent=live?"No applications yet":"Loading applications…"; $("#emptyRows").querySelector("p").textContent=live?"Add your first student with “+ New application”. Each record tracks the student, course, agent, documents and visa stage.":"Connecting to the shared database."; }
+  else { $("#emptyRows").querySelector("h3").textContent="No applications match these filters"; $("#emptyRows").querySelector("p").textContent="Clear the filters, or add a new application."; }
+  document.querySelectorAll("th[data-sort]").forEach(th=>th.setAttribute("aria-sort",th.dataset.sort===sort.k?(sort.dir>0?"ascending":"descending"):"none"));
+  $("#sortNote").textContent=`Sorted by ${$(`th[data-sort="${sort.k}"]`).textContent.toLowerCase()}, ${sort.dir>0?"ascending":"descending"}`;
+  drawDonut(rows);drawBars(rows);
+}
+
+function drawDonut(rows){
+  const el=$("#donut");
+  if(!rows.length){el.innerHTML='<div class="empty-chart">No applications to chart</div>';return}
+  const c={};rows.forEach(a=>c[a.status]=(c[a.status]||0)+1);
+  const segs=STAGES.filter(s=>c[s.k]);const tot=rows.length;
+  const R=80,r=52,cx=110,cy=100;let a0=-Math.PI/2;
+  const arcs=segs.map(s=>{const f=c[s.k]/tot;const a1=a0+f*2*Math.PI;const large=f>.5?1:0;
+    let d;
+    if(f>=0.9999){d=`M${cx} ${cy-R}A${R} ${R} 0 1 1 ${cx-.01} ${cy-R}L${cx-.01} ${cy-r}A${r} ${r} 0 1 0 ${cx} ${cy-r}Z`}
+    else{const p=(rad,ang)=>[cx+rad*Math.cos(ang),cy+rad*Math.sin(ang)];const[x0,y0]=p(R,a0),[x1,y1]=p(R,a1),[x2,y2]=p(r,a1),[x3,y3]=p(r,a0);
+    d=`M${x0} ${y0}A${R} ${R} 0 ${large} 1 ${x1} ${y1}L${x2} ${y2}A${r} ${r} 0 ${large} 0 ${x3} ${y3}Z`}
+    a0=a1;return`<path d="${d}" fill="var(${s.c})" stroke="var(--surface)" stroke-width="2"><title>${s.t}: ${c[s.k]}</title></path>`}).join("");
+  el.innerHTML=`<svg viewBox="0 0 220 200" role="img" aria-label="Applications by stage">${arcs}
+    <text x="${cx}" y="${cy+2}" text-anchor="middle" style="font-family:var(--f-display);font-size:30px;font-weight:700;fill:var(--ink)">${tot}</text>
+    <text x="${cx}" y="${cy+20}" text-anchor="middle">total</text></svg>
+    <div class="legend">${segs.map(s=>`<span style="--c:var(${s.c})"><i></i>${s.t} · ${c[s.k]} (${Math.round(c[s.k]/tot*100)}%)</span>`).join("")}</div>`;
+}
+
+function drawBars(rows){
+  const el=$("#bars");
+  const by={};rows.forEach(a=>{if(a.intake)by[a.intake]=(by[a.intake]||0)+1});
+  const keys=Object.keys(by).sort();
+  if(!keys.length){el.innerHTML='<div class="empty-chart">No intake dates yet</div>';return}
+  const max=Math.max(...Object.values(by));const step=max<=5?1:Math.ceil(max/5);const top=Math.ceil(max/step)*step;
+  const W=360,H=210,L=30,B=30,T=12,Rm=8;const iw=W-L-Rm,ih=H-B-T;const bw=Math.min(54,iw/keys.length*.6);
+  let g="";for(let v=0;v<=top;v+=step){const y=T+ih-(v/top)*ih;g+=`<line x1="${L}" x2="${W-Rm}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${L-6}" y="${y+4}" text-anchor="end">${v}</text>`}
+  const bars=keys.map((k,i)=>{const x=L+iw*(i+.5)/keys.length;const h=by[k]/top*ih;const y=T+ih-h;
+    return`<rect x="${x-bw/2}" y="${y}" width="${bw}" height="${h}" rx="5" fill="var(--accent)"><title>${fmtIntake(k)}: ${by[k]}</title></rect>
+      <text x="${x}" y="${y-5}" text-anchor="middle" style="fill:var(--ink);font-weight:600">${by[k]}</text>
+      <text x="${x}" y="${H-10}" text-anchor="middle">${fmtIntake(k)}</text>`}).join("");
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Applications by intake">${g}${bars}</svg>`;
+}
+
+/* ---------- drawer: view/edit an application ---------- */
+let editing=null;
+function field(id,label,val,type="text",extra=""){return`<div class="field"><label class="label" for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(val??"")}" ${extra}></div>`}
+function sel(id,label,list,val){return`<div class="field"><label class="label" for="${id}">${label}</label><select id="${id}">${list.map(([v,t])=>`<option value="${esc(v)}"${v===val?" selected":""}>${esc(t)}</option>`).join("")}</select></div>`}
+function dlist(id,list){return`<datalist id="${id}">${list.map(v=>`<option value="${esc(v)}">`).join("")}</datalist>`}
+
+function openDrawer(a){
+  const isNew=!a; a=a?structuredClone(a):{status:"received",docs:{},history:[]};
+  editing=a; const ro=!canWrite;save.ok=false;
+  $("#drawerRoot").innerHTML=`<div class="scrim" id="scrim"></div>
+  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+    <header><h2 id="dTitle">${isNew?"New application":esc(a.name)}</h2><button class="btn" id="dClose" type="button" aria-label="Close">Close</button></header>
+    <form class="body" id="dForm" autocomplete="off">
+      ${!canWrite?'<div class="banner">You can view applications but not change them.</div>':""}
+      <fieldset><legend>Student</legend>
+        ${field("dName","Full name (as in passport)",a.name,"text","required")}
+        <div class="grid2">${field("dPassport","Passport no.",a.passport,"text",'class="mono" required')}${field("dNat","Nationality",a.nationality)}</div>
+        <div class="grid2">${field("dEmail","Email",a.email,"email")}${field("dPhone","Phone / WhatsApp",a.phone,"tel")}</div>
+        ${field("dDob","Date of birth",a.dob,"date")}
+      </fieldset>
+      <fieldset><legend>Course application</legend>
+        ${field("dCourse","Course",a.course,"text",'list="courseList"')}${dlist("courseList",settings.courses)}
+        <div class="grid2">
+          ${sel("dLevel","Level",[["",""],["Certificate","Certificate"],["Diploma","Diploma"],["Higher Diploma","Higher Diploma"],["Degree","Degree"],["Postgraduate","Postgraduate"]],a.level||"")}
+          ${field("dPrior","Prior education",a.prior,"text",'placeholder="e.g. Senior High School"')}
+        </div>
+        <div class="grid2">${field("dIntake","Commencement (intake)",a.intake,"month")}${field("dAgent","Agent",a.agent,"text",'list="agentList"')}</div>${dlist("agentList",settings.agents)}
+      </fieldset>
+      <fieldset><legend>Process</legend>
+        <div class="grid2">${sel("dStatus","Stage",STAGES.map(s=>[s.k,s.t]),a.status)}${field("dPio","Date submitted to PIO",a.pioDate,"date")}</div>
+        <div class="field"><label class="label" for="dNotes">Notes</label><textarea id="dNotes">${esc(a.notes||"")}</textarea></div>
+      </fieldset>
+      <fieldset><legend>Documents</legend><div id="docList"></div>
+        <small style="color:var(--muted)">${assets?"PDF or image, up to 20 MB each.":"Uploading needs editor access to this page. You can still tick documents as received."}</small>
+      </fieldset>
+      ${a.history?.length?`<fieldset><legend>History</legend><ul class="timeline">${a.history.slice().reverse().map(h=>`<li><time>${fmtDate(h.at)}</time><span>${esc(h.text)}</span></li>`).join("")}</ul></fieldset>`:""}
+    </form>
+    <footer>
+      <div id="delZone">${!isNew&&!ro?'<button class="btn danger" type="button" id="dDel">Delete</button>':""}</div>
+      <div style="display:flex;gap:10px"><button class="btn" type="button" id="dCancel">Cancel</button>${ro?"":`<button class="btn primary" type="submit" form="dForm" id="dSave">${isNew?"Add application":"Save changes"}</button>`}</div>
+    </footer>
+  </aside>`;
+  if(ro) document.querySelectorAll("#dForm input,#dForm select,#dForm textarea").forEach(e=>e.disabled=true);
+  renderDocs(ro);
+  const close=()=>{$("#drawerRoot").innerHTML="";editing=null};
+  $("#dClose").onclick=close;$("#dCancel").onclick=close;$("#scrim").onclick=close;
+  document.addEventListener("keydown",function k(e){if(e.key==="Escape"){close();document.removeEventListener("keydown",k)}});
+  $("#dForm").onsubmit=e=>{e.preventDefault();save(isNew)};
+  const del=$("#dDel");
+  if(del) del.onclick=()=>{$("#delZone").innerHTML=`<div class="confirm">Delete this application?<button class="btn danger" type="button" id="dDelYes">Delete</button><button class="btn" type="button" id="dDelNo">Keep</button></div>`;
+    $("#dDelNo").onclick=()=>openDrawer(apps.find(x=>x.id===a.id));
+    $("#dDelYes").onclick=async()=>{try{if(db)await db.collection("applications").doc(a.id).delete();else apps=apps.filter(x=>x.id!==a.id);close();toast("Application deleted");render()}catch(err){toast("Couldn't delete. Try again.")}}};
+  setTimeout(()=>$("#dName")?.focus(),50);
+}
+
+function renderDocs(ro){
+  const d=editing.docs||(editing.docs={});
+  $("#docList").innerHTML=DOCS.map(x=>{const v=d[x.k];
+    const link=v?.id?`<a href="/_blob/${esc(v.id)}" target="_blank" rel="noopener">${esc(v.n||"View")}</a>`:(v?`<span>${esc(v.n||"Received")}</span>`:'<span style="color:var(--muted)">Not received</span>');
+    return`<div class="docrow"><div><b>${x.t}</b><div>${link}</div></div>${ro?"":`<div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${assets?`<label class="btn" style="padding:6px 10px">Upload<input type="file" accept="application/pdf,image/*" data-k="${x.k}" hidden></label>`:""}
+      ${v?`<button class="btn" type="button" data-clear="${x.k}" style="padding:6px 10px">Remove</button>`:`<button class="btn" type="button" data-tick="${x.k}" style="padding:6px 10px">Mark received</button>`}</div>`}</div>`}).join("");
+  $("#docList").querySelectorAll("input[type=file]").forEach(inp=>inp.onchange=async()=>{const f=inp.files[0];if(!f)return;
+    try{toast("Uploading…");const r=await assets.upload(f);d[inp.dataset.k]={id:r.id,n:f.name};renderDocs(ro);toast("Uploaded. Save to keep it.")}
+    catch(e){toast(e.code==="too_large"?"That file is over 20 MB.":e.code==="unsupported_type"?"Use a PDF or image file.":"Upload failed. Try again.")}});
+  $("#docList").querySelectorAll("[data-tick]").forEach(b=>b.onclick=()=>{d[b.dataset.tick]={n:"Received (paper copy)"};renderDocs(ro)});
+  $("#docList").querySelectorAll("[data-clear]").forEach(b=>b.onclick=()=>{delete d[b.dataset.clear];renderDocs(ro)});
+}
+
+async function save(isNew){
+  const v=id=>$(id).value.trim();
+  const a=editing,prevStatus=a.status;
+  Object.assign(a,{name:v("#dName"),passport:v("#dPassport").toUpperCase(),nationality:v("#dNat"),email:v("#dEmail"),phone:v("#dPhone"),dob:v("#dDob"),
+    course:v("#dCourse"),level:v("#dLevel"),prior:v("#dPrior"),intake:v("#dIntake"),agent:v("#dAgent"),status:v("#dStatus"),pioDate:v("#dPio"),notes:$("#dNotes").value});
+  if(!a.name||!a.passport){toast("Name and passport number are required.");return}
+  const dup=apps.find(x=>x.id!==a.id&&x.passport===a.passport);
+  if(dup&&!save.ok){save.ok=true;toast(`Passport ${a.passport} is already on file for ${dup.name}. Press save again to add anyway.`);return}
+  save.ok=false;
+  a.history=a.history||[];const now=Date.now();
+  if(isNew)a.history.push({at:now,text:`Application created — ${STAGE[a.status].t}`});
+  else if(prevStatus!==a.status)a.history.push({at:now,text:`Moved to ${STAGE[a.status].t}`});
+  a.updatedAt=now;if(isNew)a.createdAt=now;
+  const {id,...body}=a;
+  $("#dSave").disabled=true;
+  try{
+    if(db){const col=db.collection("applications");const ref=isNew?col.doc():col.doc(id);await ref.set(body)}
+    else{const nid=id||("local-"+now);apps=[...apps.filter(x=>x.id!==nid),{...body,id:nid}]}
+    $("#drawerRoot").innerHTML="";editing=null;toast(isNew?"Application added":"Changes saved");render();
+  }catch(err){$("#dSave").disabled=false;
+    if(err.code==="invalid_argument"){canWrite=false;toast("You don't have permission to change applications.")}
+    else if(err.code==="quota_exceeded")toast("The database is full. Delete old applications to add more.");
+    else toast("Couldn't save. Check your connection and try again.")}
+}
+
+/* ---------- settings ---------- */
+function openSettings(){
+  $("#drawerRoot").innerHTML=`<div class="scrim" id="scrim"></div>
+  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="sTitle">
+    <header><h2 id="sTitle">Portal settings</h2><button class="btn" id="sClose" type="button">Close</button></header>
+    <form class="body" id="sForm">
+      ${field("sName","College name",settings.name,"text",'placeholder="e.g. Your College, Mauritius"')}
+      <div class="field"><label class="label" for="sCourses">Courses (one per line)</label><textarea id="sCourses" style="min-height:120px">${esc(settings.courses.join("\n"))}</textarea></div>
+      <div class="field"><label class="label" for="sAgents">Recruitment agents (one per line)</label><textarea id="sAgents" style="min-height:120px">${esc(settings.agents.join("\n"))}</textarea></div>
+    </form>
+    <footer><span></span><div style="display:flex;gap:10px"><button class="btn" type="button" id="sCancel">Cancel</button>${canWrite?'<button class="btn primary" type="submit" form="sForm">Save settings</button>':""}</div></footer>
+  </aside>`;
+  const close=()=>$("#drawerRoot").innerHTML="";
+  $("#sClose").onclick=close;$("#sCancel").onclick=close;$("#scrim").onclick=close;
+  $("#sForm").onsubmit=async e=>{e.preventDefault();
+    const lines=id=>$(id).value.split("\n").map(s=>s.trim()).filter(Boolean);
+    const next={name:$("#sName").value.trim(),courses:lines("#sCourses"),agents:lines("#sAgents")};
+    try{if(db)await db.doc("settings/college").set(next);settings=next;close();toast("Settings saved");render()}
+    catch(err){toast(err.code==="invalid_argument"?"You don't have permission to change settings.":"Couldn't save settings.")}};
+}
+
+/* ---------- wiring ---------- */
+$("#newBtn").onclick=()=>openDrawer(null);
+$("#settingsBtn").onclick=openSettings;
+$("#rows").addEventListener("click",e=>{const tr=e.target.closest("tr[data-id]");if(tr)openDrawer(showing().find(a=>a.id===tr.dataset.id))});
+$("#rows").addEventListener("keydown",e=>{if(e.key==="Enter"){const tr=e.target.closest("tr[data-id]");if(tr)openDrawer(showing().find(a=>a.id===tr.dataset.id))}});
+$("#stages").addEventListener("click",e=>{const b=e.target.closest(".stage");if(!b)return;filt.status=filt.status===b.dataset.k?"":b.dataset.k;render()});
+document.querySelectorAll("th[data-sort]").forEach(th=>th.onclick=()=>{const k=th.dataset.sort;sort=sort.k===k?{k,dir:-sort.dir}:{k,dir:k==="updatedAt"?-1:1};render()});
+[["#fName","name","input"],["#fPassport","passport","input"],["#fStatus","status","change"],["#fAgent","agent","change"],["#fIntake","intake","change"]].forEach(([s,k,ev])=>$(s).addEventListener(ev,e=>{filt[k]=e.target.value;render()}));
+$("#clearBtn").onclick=()=>{filt={name:"",passport:"",status:"",agent:"",intake:""};$("#fName").value="";$("#fPassport").value="";render()};
+
+render();
+
+(async()=>{
+  const c=window.claude;
+  if(!c?.use){$("#offlineBanner").hidden=false;live=true;render();return}
+  [db,user,assets]=await Promise.all([c.use("db"),c.use("user"),c.use("assets")]);
+  if(!db){$("#offlineBanner").hidden=false;live=true;render();return}
+  if(user){const w=await user.can("data.write");if(w===false)canWrite=false}
+  if(!canWrite){$("#newBtn").disabled=true}
+  db.doc("settings/college").onSnapshot(s=>{if(s.exists){settings={...DEFAULT_SETTINGS,...s.data()};render()}},()=>{});
+  db.collection("applications").onSnapshot(snap=>{
+    live=true;apps=snap.docs.map(d=>({...d.data(),id:d.id }));render();
+  },err=>{if(err.code!=="revoked")toast("Lost connection to the database. Reload the page.")});
+})();
+</script>
